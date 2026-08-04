@@ -2,7 +2,7 @@
 
 ## Current State
 
-- GitHub CLI is installed.
+- GitHub CLI is installed and publishing is complete.
 - Current `gh` token is invalid.
 - No automation repo has an `origin` remote yet.
 - Publish target: public repositories.
