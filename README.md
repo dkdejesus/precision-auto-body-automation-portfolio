@@ -17,6 +17,10 @@ The work is intentionally broader than isolated AI demos. Each repo represents o
 - Website intake workflow: `collision-intake-api` remains the active current-website intake service
 - Data policy: synthetic public demo data only
 
+## Production Automation Roadmap
+
+The production roadmap is tracked in [PRODUCTION_AUTOMATION_ROADMAP.md](PRODUCTION_AUTOMATION_ROADMAP.md). It defines the staged path from deployed workflow APIs to a staff-facing automation suite: intake capture, Ops Console, central Postgres, approval workflow, scheduling, estimate/supplement workflows, parts, customer updates, production dashboard, integrations, security, and metrics.
+
 ## Active Production Map
 
 | Workflow lane | Active service | Trigger | Current role | Live status |
