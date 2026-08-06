@@ -55,8 +55,8 @@ The work is intentionally broader than isolated AI demos. Each repo represents o
 
 ```mermaid
 flowchart LR
-    Architecture["Week 1 Operating Architecture"] --> Design["Week 2 AI Design"]
-    Design --> Services["12 FastAPI Workflow Services"]
+    OperatingModel["Collision Repair Operating Model"] --> WorkflowDesign["Workflow and AI Service Design"]
+    WorkflowDesign --> Services["12 FastAPI Workflow Services"]
     Services --> Active["10 Active Railway Services"]
     Services --> Deferred["2 Deferred Services"]
     Calls["Vapi Phone Calls"] --> Phone["Phone Intake Webhook"]
