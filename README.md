@@ -119,6 +119,48 @@ Customer call
 
 The remaining services are deployed workflow engines. They become true automations when they receive real triggers and route results into the Precision review/action layer.
 
+## Deterministic Workflow vs AI Judgment
+
+Production automation should combine deterministic workflow control with bounded AI judgment:
+
+```text
+Deterministic workflow = controls the process
+AI judgment = interprets messy information
+Human review = approves sensitive action
+```
+
+Use deterministic code for anything that must be predictable, auditable, and enforceable. Use AI for language-heavy interpretation, summarization, classification, and drafting. Do not use AI for control-plane decisions.
+
+| Layer | Deterministic automation owns | AI judgment owns |
+| --- | --- | --- |
+| Trigger handling | Webhook validation, event filtering, duplicate handling, schedule execution | Nothing |
+| Input preparation | Required metadata, source IDs, timestamps, request IDs, schema validation | Extracting meaning from messy transcripts, notes, emails, or estimate text |
+| Business rules | Required-field checks, approval gates, routing, persistence, audit logs, status labels | Risk classification, draft language, summarization, missing-info suggestions |
+| Sensitive actions | Human-review enforcement, no-auto-send rules, final approval state | Drafts and recommendations only |
+| System updates | Creating saved records, Gmail drafts, Calendar drafts, future approved system writes | Suggested content for the deterministic action |
+
+For the live Vapi phone intake workflow:
+
+```text
+Deterministic:
+Vapi event received
+-> check webhook secret
+-> accept only end-of-call-report
+-> extract transcript
+-> create request_id
+
+AI judgment:
+Assess transcript for urgency, drivability caution, missing fields, next steps, and customer-ready draft
+
+Deterministic:
+Save result
+-> return request_id
+-> make record retrievable
+-> require human review
+```
+
+Design rule: AI may draft, classify, summarize, flag, and recommend. Deterministic code must enforce the workflow gates. Humans approve safety, customer-facing, insurer-facing, financial, repair, and drivability decisions.
+
 ## Workflow Automation Reference
 
 | Workflow | Trigger target | API | Review owner | Approved action | Production maturity |

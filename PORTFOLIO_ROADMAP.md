@@ -88,6 +88,47 @@ Full automation = trigger + API processing + saved record + human review + appro
 | 8. Update systems | Approved information moves to operating systems | CCC ONE, Gmail, Calendar, QuickBooks, production board |
 | 9. Measure | Track whether the automation is valuable | Time saved, missing fields caught, callbacks avoided, blockers reduced |
 
+### Deterministic Workflow vs AI Judgment
+
+Use this rule when deciding what to build in code versus what to ask the model to do:
+
+```text
+Deterministic workflow = controls the process
+AI judgment = interprets messy information
+Human review = approves sensitive action
+```
+
+| Responsibility | Deterministic implementation | AI implementation |
+|---|---|---|
+| Webhooks and triggers | Validate secrets, accept known event types, reject/ignore unsupported events | None |
+| Request shaping | Preserve source IDs, timestamps, request IDs, required fields, schemas | Convert messy language into structured business meaning |
+| Workflow control | Route records, persist results, enforce approval gates, prevent auto-send | Recommend next steps and explain risks |
+| Business rules | Required-field checklist, duplicate checks, status transitions, audit history | Classify urgency, summarize, draft, flag uncertainty |
+| Sensitive decisions | Require human approval for safety, insurance, financial, repair, and customer-facing actions | Provide draft language or risk notes only |
+| System actions | Create records, create drafts, update approved systems, measure outcomes | Suggest content for those deterministic actions |
+
+Current Vapi phone intake split:
+
+```text
+Deterministic:
+Vapi event received
+-> check webhook secret
+-> accept only end-of-call-report
+-> extract transcript
+-> create request_id
+
+AI judgment:
+Assess transcript for urgency, drivability caution, missing fields, next steps, and customer-ready draft
+
+Deterministic:
+Save result
+-> return request_id
+-> make record retrievable
+-> require human review
+```
+
+Never use AI to decide whether to accept a webhook, skip review, send a message, confirm drivability, approve insurance language, collect payment, or close a repair order. AI can draft, classify, summarize, flag, and recommend inside a deterministic workflow.
+
 ### Workflow Implementation Map
 
 | Workflow | Real-world trigger | Current API | Output to review | Next implementation step |
