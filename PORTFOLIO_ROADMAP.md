@@ -65,6 +65,73 @@ Private Precision Ops Console
 -> copy or integrate into CCC ONE, Gmail, Calendar, and production workflows
 ```
 
+## Automation Reference Manual
+
+Use this roadmap as the implementation reference for turning deployed APIs into real Precision Auto Body workflow automation. The core rule:
+
+```text
+An API is not the full automation.
+Full automation = trigger + API processing + saved record + human review + approved business action.
+```
+
+### Standard Automation Loop
+
+| Step | What happens | Implementation notes |
+|---|---|---|
+| 1. Trigger | A real business event starts the workflow | Vapi call ended, website lead submitted, Gmail received, Google Sheet row updated, daily schedule |
+| 2. Capture | The raw artifact is collected | Transcript, form payload, estimate text, RO notes, parts email, production board |
+| 3. Normalize | Input is mapped into a typed API request | Keep unknowns as `To Validate`; preserve source IDs and timestamps |
+| 4. Process | The workflow API returns structured output | Drafts, checklists, risk flags, missing fields, next actions |
+| 5. Persist | Store request, output, model/fallback, and request ID | SQLite per service now; shared Postgres later |
+| 6. Review | Staff reviews before action | Required for safety, customer, insurance, repair, and financial outputs |
+| 7. Act | Staff approves, edits, copies, drafts, schedules, or escalates | Start with copy/draft workflows before direct writes |
+| 8. Update systems | Approved information moves to operating systems | CCC ONE, Gmail, Calendar, QuickBooks, production board |
+| 9. Measure | Track whether the automation is valuable | Time saved, missing fields caught, callbacks avoided, blockers reduced |
+
+### Workflow Implementation Map
+
+| Workflow | Real-world trigger | Current API | Output to review | Next implementation step |
+|---|---|---|---|---|
+| Phone intake | Vapi end-of-call report | `collision-phone-intake-api` | Urgency, drivability caution, missing fields, next steps | Improve Precision-specific intake checklist and CCC-ready summary |
+| Website intake | Website lead submission | `collision-intake-api` | Intake assessment and next steps | Route website leads into same review queue as Vapi intakes |
+| Appointment scheduling | Intake marked ready to schedule | `collision-appointment-scheduler-api` | Appointment readiness and confirmation draft | Create Google Calendar draft after staff approval |
+| VIN support | VIN captured from intake/estimate | `collision-vin-decoder-api` | Normalized vehicle profile and warnings | Trigger from intake and estimate workflows |
+| Estimate review | Estimate text/PDF export available | `collision-estimate-parser-api` | Totals, missing fields, risk flags, review checklist | Support real estimate text export fixtures |
+| RO summary | RO notes or repair status export available | `collision-repair-order-summarizer-api` | Internal summary, customer-safe summary, blockers | Add RO note template and manager review flow |
+| Supplement evidence | Supplement candidate found | `collision-supplement-evidence-api` | Narrative draft, evidence checklist, readiness | Connect to estimate review and photo/procedure placeholders |
+| Customer updates | Repair stage or blocker changes | `collision-customer-status-update-api` | Customer-safe message and approval flags | Build staff review screen with approve/copy action |
+| Parts ETA | Vendor email or parts board changes | `collision-parts-eta-tracker-api` | Part status board, ETA risk, follow-up draft | Add Gmail/CSV trigger for vendor updates |
+| Insurance email | Claim/supplement follow-up needed | `collision-insurance-email-drafting-api` | Adjuster email draft and escalation reason | Create Gmail draft, never auto-send |
+| Daily dashboard | Daily schedule or production sheet update | `collision-daily-production-dashboard-api` | WIP summary, at-risk jobs, manager priorities | Start with Google Sheet/CSV as production source |
+| Technician work queue | Production manager prioritizes work | `collision-technician-work-queue-api` | Task queue and blocker reasons | Deferred until production dashboard data is reliable |
+| Delivery readiness | Job reaches delivery candidate stage | `collision-delivery-readiness-api` | QC/payment/docs/pickup gate status | Deferred until delivery workflow is standardized |
+
+### Integration Policy
+
+Start with low-risk handoffs and add deeper system writes only after staff trust the review loop.
+
+| Integration level | Pattern | When to use |
+|---|---|---|
+| Manual review | Staff opens Ops Console and copies approved output | First production pilots |
+| Draft creation | System creates Gmail/Calendar drafts but does not send | Customer, insurance, and scheduling workflows |
+| File or sheet import | API reads CSV/Google Sheet exports | Production dashboard, estimate review, parts tracking |
+| Controlled system write | Approved output writes into a business system | After audit logs, roles, and rollback path exist |
+| Direct multi-system automation | Systems trigger each other automatically | Only after workflows are stable and measured |
+
+### Production Readiness Checklist
+
+Before a workflow is considered production-ready, confirm:
+
+- Trigger is reliable and documented.
+- API input schema matches the real business artifact.
+- Unknowns are marked `To Validate`.
+- Output has a clear staff review owner.
+- Customer-facing, insurer-facing, financial, repair, and safety outputs require human approval.
+- Records persist with request ID, source ID, model/fallback, and timestamp.
+- Staff can review output without using raw JSON or Swagger.
+- A rollback/manual fallback exists.
+- Metrics are defined for time saved, errors avoided, or rework reduced.
+
 ## Recommended Public Narrative
 
 This portfolio shows a practical FDE-style path: understand the business, define workflows and objects, identify decisions, draw product boundaries, then ship small deployable services with typed APIs, observability, tests, Docker, and public-safe examples.

@@ -77,6 +77,80 @@ flowchart LR
 5. The other active services are online as workflow engines and need UI/review/integration layers before staff-wide production use.
 6. The next major product layer is a private Precision Ops Console that lets staff review and act on saved API outputs without using raw JSON or Swagger.
 
+## Automation Implementation Model
+
+The APIs are the processing layer, not the whole automation. Each production automation should be implemented as a complete business loop:
+
+```text
+Trigger
+-> Input capture
+-> Normalization
+-> Workflow API
+-> Saved record
+-> Human review
+-> Approved action
+-> Business system update
+-> Measurement
+```
+
+Use this pattern for every workflow:
+
+| Layer | Purpose | Precision examples |
+| --- | --- | --- |
+| Trigger | Starts the automation without staff opening Swagger | Vapi call ended, website lead submitted, Gmail received, Google Sheet row updated, daily schedule |
+| Input capture | Collects the raw business artifact | Transcript, form lead, estimate text, RO notes, parts email, production sheet |
+| Normalization | Converts messy input into a consistent request shape | Map transcript to intake notes, map CSV rows to jobs, map vendor email to part status |
+| Workflow API | Produces structured operational output | Missing fields, risk flags, drafts, checklist, next action |
+| Saved record | Creates an audit trail and reviewable history | SQLite now; shared Postgres later |
+| Human review | Keeps safety, customer, insurance, and financial decisions approved by staff | Front desk, estimator, production manager, owner |
+| Approved action | Turns the draft/recommendation into work | Customer message, appointment draft, supplement packet, vendor follow-up |
+| Business system update | Moves approved info into operating systems | CCC ONE note, Gmail draft, Calendar event, QuickBooks reference, production board |
+| Measurement | Proves whether the automation is worth keeping | Time saved, missing fields caught, callbacks reduced, cycle-time risk reduced |
+
+The first real automated loop is already live:
+
+```text
+Customer call
+-> Vapi transcript
+-> collision-phone-intake-api webhook
+-> saved phone intake
+-> staff review
+```
+
+The remaining services are deployed workflow engines. They become true automations when they receive real triggers and route results into the Precision review/action layer.
+
+## Workflow Automation Reference
+
+| Workflow | Trigger target | API | Review owner | Approved action | Production maturity |
+| --- | --- | --- | --- | --- | --- |
+| Phone intake | Vapi `end-of-call-report` webhook | `collision-phone-intake-api` | Front desk / estimator | Complete intake, request missing fields, decide next staff action | Automated trigger live |
+| Website intake | Current website lead workflow | `collision-intake-api` | Front desk / estimator | Review lead assessment, follow up, create/continue intake | Active workflow item |
+| Appointment scheduling | Intake marked appointment-ready | `collision-appointment-scheduler-api` | Front desk | Create Calendar draft or confirm appointment manually | Needs trigger + calendar draft layer |
+| VIN support | Intake or estimate includes VIN | `collision-vin-decoder-api` | Estimator | Validate vehicle profile before estimate/research | Needs trigger from intake/estimate |
+| Estimate review | Estimate text/PDF export uploaded or pasted | `collision-estimate-parser-api` | Estimator | Review totals, missing fields, calibration/OEM risk | Needs real parser inputs |
+| RO summary | RO notes pasted or exported | `collision-repair-order-summarizer-api` | Estimator / manager | Create internal and customer-safe summary | Needs RO source workflow |
+| Supplement evidence | Supplement candidate identified | `collision-supplement-evidence-api` | Estimator | Draft supplement narrative and evidence checklist | Needs photo/procedure/document handoff |
+| Customer updates | Repair stage/blocker changed | `collision-customer-status-update-api` | CSR / estimator | Approve customer-safe update draft | Needs production-stage trigger |
+| Parts ETA | Vendor status email or parts board update | `collision-parts-eta-tracker-api` | Parts coordinator | Escalate blockers, send vendor follow-up draft | Needs Gmail/parts-board trigger |
+| Insurance email | Claim/supplement delay or adjuster follow-up needed | `collision-insurance-email-drafting-api` | Estimator | Approve adjuster email draft | Needs Gmail draft integration |
+| Daily dashboard | Scheduled daily run or production sheet update | `collision-daily-production-dashboard-api` | Manager / owner | Set morning priorities and at-risk job list | Needs shared production data source |
+| Technician work queue | Production manager assigns work | `collision-technician-work-queue-api` | Production manager | Prioritize technician tasks | Deferred |
+| Delivery readiness | Job reaches delivery candidate status | `collision-delivery-readiness-api` | CSR / manager | Confirm QC/payment/docs/pickup gates | Deferred |
+
+## Production Build Sequence
+
+Build real automation in this order:
+
+1. **Review surface:** create the private Precision Ops Console so staff can see saved records and approve actions.
+2. **Phone intake hardening:** keep Vapi as the trigger, then improve missing-field logic, drivability cautions, and CCC-ready summaries.
+3. **Website intake handoff:** make the current website intake flow land in the same review queue as phone intake.
+4. **Customer update drafts:** let staff paste or select repair-stage notes and generate approved customer messages.
+5. **Daily production dashboard:** start from a Google Sheet or CSV export before direct CCC ONE integration.
+6. **Estimate and supplement workflows:** add real estimate text inputs, evidence checklists, and supplement packet review.
+7. **Gmail and Calendar drafts:** create drafts for staff approval; do not auto-send.
+8. **Shared database:** move from one SQLite database per service to a shared Postgres-backed operating record when cross-service handoffs become important.
+9. **System integrations:** add CCC ONE, QuickBooks, vendor, and carrier workflows only after the manual review loops are reliable.
+
 ## Guardrails
 
 - Use only synthetic or fully sanitized data.
